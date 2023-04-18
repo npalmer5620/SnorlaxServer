@@ -90,7 +90,6 @@ void respond(char *request, int socket_desc) {
     std::vector<char>().swap(response);
 }
 
-
 void build_get_response_header(std::vector<char> &request, int status_code) {
     std::string response;
     std::string status_message;
