@@ -1,122 +1,105 @@
 // Nicholas Palmer 04/2023
 
 #include <iostream>
-#include <fstream>
+#include <sys/fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-#include <sys/socket.h>
-
+#include "network.h"
 #include "response_builder.h"
 #include "parser.h"
-#include "common.h"
-
-RESOURCE_STATE get_resource(const std::string &uri_path, std::vector<char> &buffer) {
-    // Prepend base path
-    std::string system_path = config::base_path.string().append(uri_path);
-
-    // Append index.html if path ends with a slash
-    if (system_path.back() == '/') {
-        system_path.append("index.html");
-    }
-
-    // Check if file exists
-    if (!fs::exists(system_path)) {
-        std::cout << "RESOURCE NOT FOUND: '" << system_path << "'" << std::endl;
-        return NOT_FOUND;
-    }
-
-    // Read file into buffer
-    std::ifstream file(system_path, std::ios::binary);
-
-    // Check if file opened
-    if (!file.is_open()) {
-        std::cout << "RESOURCE LOAD ERROR: '" << system_path << "'" << std::endl;
-        return READ_ERROR;
-    }
-
-    // Preserve all whitespace chars
-    file.unsetf(std::ios::skipws);
-
-    // Read file into buffer
-    std::istream_iterator<char> start(file), end;
-    buffer.assign(start, end);
-
-    file.close();
-
-    return OK;
-}
 
 void respond(char *request, int socket_desc) {
-    int status_code;
     REQUEST_TYPE request_type = UNKNOWN;
     PROTOCOL_TYPE protocol_type = NONE;
-    RESOURCE_STATE res_state = NOT_FOUND;
     std::string uri_path; // Path string
-
-    std::vector<char> resource; // Resource buffer
-    std::vector<char> response; // Response buffer
 
     // Parse request line
     parse_request_line(request, request_type, uri_path, protocol_type);
     std::cout << "| " << uri_path << " ";
 
-    // Load requested resource
-    res_state = get_resource(uri_path, resource);
-
-    // Set status code
-    if (res_state == OK) {
-        status_code = 200;
+    if (request_type  == GET) {
+        handle_get(socket_desc, uri_path);
     } else {
+        std::cerr << "REQUEST TYPE NOT IMPLEMENTED" << std::endl;
+    }
+}
+
+void handle_get(const int socket_desc, std::string uri_path) {
+    int status_code;
+    int resource_fd = -1;
+    struct stat stat_buf{};
+    RESOURCE_STATE resource_state = process_uri(uri_path);
+
+    // Open file
+    if (resource_state == OK) {
+        resource_fd = open(uri_path.c_str(), O_RDONLY | O_EXCL);
+
+        if (resource_fd == -1) {
+            perror("open");
+        }
+    }
+
+    if (resource_state != OK) {
         status_code = 404;
+        std::cout << "FILE READ ERROR: '" << uri_path << "'" << std::endl;
+    }
+    else {
+        status_code = 200;
+        fstat(resource_fd, &stat_buf);
     }
 
     std::cout << "| CODE " << status_code << std::endl;
 
     // Build response header
-    build_get_response_header(response, status_code);
+    std::string header;
+    build_get_response_header(header, stat_buf.st_size, status_code);
+    send_header(socket_desc, header);
 
-    // Append resource to response
-    response.insert(std::end(response), std::begin(resource), std::end(resource));
+    // Send resource
+    if (resource_fd != -1) {
+        send_resource(socket_desc, resource_fd, stat_buf);
 
-    // Clear resource
-    std::vector<char>().swap(resource);
+        if (close(resource_fd) == -1) {
+            perror("close");
+        }
 
-    // Send response
-    if (send(socket_desc, response.data(), response.size(), 0) == -1) {
-        perror("send");
-        exit(EXIT_FAILURE);
+    } else {
+        // TODO SEND 404 Error;
     }
-
-    // Clear response
-    std::vector<char>().swap(response);
 }
 
-void build_get_response_header(std::vector<char> &request, int status_code) {
-    std::string response;
-    std::string status_message;
+void build_get_response_header(std::string &header, off_t resource_size, int status_code) {
+    // Build response header
+    header.append("HTTP/1.1 ");
 
     // Set status message
     switch (status_code) {
         case 200: {
-            status_message = "OK";
+            header.append(std::to_string(status_code) + " " + "OK" + "\r\n");
             break;
         } case 404: {
-            status_message = "Not Found";
+            header.append(std::to_string(status_code) + " " + "Not Found" + "\r\n");
             break;
         } case 405: {
-            status_message = "Method Not Allowed";
+            header.append(std::to_string(status_code) + " " + "Method Not Allowed" + "\r\n");
             break;
         } default: {
-            status_code = 500;
-            status_message = "Unknown";
+            header.append(std::to_string(500) + " " + "Unknown" + "\r\n");
             break;
         }
     }
 
     // Build response header
-    response.append("HTTP/1.1 " + std::to_string(status_code) + " " + status_message + "\n");
-    response.append("Server: BladeServer/0.0.1\n");
-    response.append("Content-Type: text/html\n");
-    response.append("\n");
+    header.append("Server: SnorlaxServer/0.0.1\r\n");
+    // TODO Determine Content Type
+    // response.append("Content-Type: text/html\r\n");
 
-    std::copy(response.begin(), response.end(), std::back_inserter(request));
+    // Content Length is not required for GET
+    header.append("Content-Length: ");
+    header.append(std::to_string(resource_size));
+    header.append("\r\n");
+    header.append("\r\n");
+
+    // std::copy(response.begin(), response.end(), std::back_inserter(request));
 }

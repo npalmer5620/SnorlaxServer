@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 
         char recv_buffer[BUFFER_SIZE] = {0}; // 8 Kb
         size_t response_size = 0;
-        ssize_t recv_size = recv(new_socket_fd, recv_buffer + response_size, BUFFER_SIZE - response_size, 0);
+        ssize_t recv_size = recv(new_socket_fd, recv_buffer + response_size, MAX_TCP_BUFFER_SIZE - response_size, 0);
 
         if (recv_size > 0) {
             response_size += recv_size;

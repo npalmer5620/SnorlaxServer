@@ -1,6 +1,24 @@
 // Nicholas Palmer 04/2023
 
+#include "common.h"
 #include "parser.h"
+
+RESOURCE_STATE process_uri(std::string &uri_path) {
+    // Prepend base path
+    // std::string system_path = config::base_path.string().append(uri_path);
+    uri_path.insert (0, config::base_path.string());
+
+    // Append index.html if path ends with a slash
+    if (uri_path.back() == '/') {
+        uri_path.append("index.html");
+    }
+
+    // Check if file exists
+    if (!fs::exists(uri_path)) {
+        return NOT_FOUND;
+    }
+    return OK;
+}
 
 int parse_request_line(char *request, REQUEST_TYPE &request_type, std::string &path, PROTOCOL_TYPE &protocol_type) {
     char *next;
