@@ -12,8 +12,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "response_builder.h"
-#include "common.h"
+#include "include/response_builder.h"
+#include "include/common.h"
 
 #define PORT 80
 #define BUFFER_SIZE 65536

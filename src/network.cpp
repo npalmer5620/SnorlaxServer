@@ -7,7 +7,7 @@
 #include <vector>
 #include <iostream>
 
-#include "network.h"
+#include "../include/network.h"
 
 int send_resource_fallback(const int valid_socket_fd, const int valid_resource_fd) {
     ssize_t bytes_read;

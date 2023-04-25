@@ -5,9 +5,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "network.h"
-#include "response_builder.h"
-#include "parser.h"
+#include "../include/network.h"
+#include "../include/response_builder.h"
+#include "../include/parser.h"
 
 void respond(char *request, int socket_desc) {
     REQUEST_TYPE request_type = UNKNOWN;

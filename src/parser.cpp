@@ -1,7 +1,7 @@
 // Nicholas Palmer 04/2023
 
-#include "common.h"
-#include "parser.h"
+#include "../include/common.h"
+#include "../include/parser.h"
 
 RESOURCE_STATE process_uri(std::string &uri_path) {
     // Prepend base path
