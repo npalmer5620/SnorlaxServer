@@ -80,25 +80,25 @@ int main(int argc, char *argv[]) {
     while (true) {
         socklen_t client_addr_len = sizeof(client_addr);
 
-        // printf("Waiting for accept...\n");
         // Extract first request to connect in the queue, and create new connected socket
-        if ((new_socket_fd = accept(socket_fd, (struct sockaddr *) &server_addr, (socklen_t *) &client_addr_len)) ==
+        if ((new_socket_fd = accept(socket_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len)) ==
             -1) {
             perror("accept");
             exit(EXIT_FAILURE);
         }
 
         // inet_ntop(server_addr.sin_family, get_in_addr((struct sockaddr*) &client_addr), addr_str, sizeof(addr_str));
-        printf("HOST: CONNECTION FROM %s | ", addr_str);
+        printf("HOST: CONNECTION FROM %s | ", inet_ntoa(client_addr.sin_addr));
 
         char recv_buffer[BUFFER_SIZE] = {0}; // 8 Kb
         size_t response_size = 0;
+
+        // TODO handle response larger than MAX_TCP_BUFFER_SIZE
         ssize_t recv_size = recv(new_socket_fd, recv_buffer + response_size, MAX_TCP_BUFFER_SIZE - response_size, 0);
 
         if (recv_size > 0) {
             response_size += recv_size;
         } else if (recv_size == 0) {
-
             continue;
         } else if (recv_size == -1) {
             perror("recv");

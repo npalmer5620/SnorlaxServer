@@ -1,6 +1,4 @@
-//
-// Created by Nick Palmer on 4/18/23.
-//
+// Nicholas Palmer 04/2023
 
 #pragma once
 #include "common.h"

@@ -42,14 +42,14 @@ void handle_get(const int socket_desc, std::string uri_path) {
 
     if (resource_state != OK) {
         status_code = 404;
-        std::cout << "FILE READ ERROR: '" << uri_path << "'" << std::endl;
+        std::cout << "| CODE " << status_code << std::endl;
+        std::cout << "FILE DNE: '" << uri_path << "'" << std::endl;
     }
     else {
         status_code = 200;
+        std::cout << "| CODE " << status_code << std::endl;
         fstat(resource_fd, &stat_buf);
     }
-
-    std::cout << "| CODE " << status_code << std::endl;
 
     // Build response header
     std::string header;
