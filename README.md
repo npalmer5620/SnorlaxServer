@@ -1,5 +1,5 @@
-# SnorlaxServer - A Pure C/C++ Webserver
-A cool project im working on learn how Sockets work and to learn some modern C/C++ Programming.
+# SnorlaxServer - A Pure C/C++ HTTP Server
+A project im working on learn about sockets and HTTP, and demonstrate some modern C/C++ programming ability.
 # Usage
 To run the server, first build it using cmake, it has no dependencies but will only work on -nix systems since we are using POSIX sockets implementation.
 
